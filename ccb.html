@@ -28,6 +28,9 @@
         //alert('draw called');
         var p = new Puzzle(dimension);
         console.log(p);
+
+        p.positions[0][0].toggle();
+        p.positions[2][0].jump(directions.NE);
       }
 
       function Puzzle(dimension){
@@ -39,7 +42,6 @@
           for(var j=0; j<this.positions[i].length ; j++){
             position = new Position(j,i,true,this);
             this.positions[i][j] =  position;
-            position.canJump(directions.NW) ;
           }
 
         };
@@ -52,6 +54,22 @@
         this.x = x;
         this.y = y;
         this.filled = true;
+      }
+
+      Position.prototype.toggle = function(){
+        this.filled = !this.filled;
+      }
+
+      Position.prototype.jump = function(direction){
+
+        if(!this.canJump(direction)) return;
+
+        units = this.getRelativeJumpUnit(direction);
+
+        this.toggle();
+        this.puzzle.positions[this.y+units.y][this.x+units.x].toggle();
+        this.puzzle.positions[this.y+2*units.y][this.x+2*units.x].toggle();
+
       }
 
       Position.prototype.canJump = function(direction){
