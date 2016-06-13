@@ -26,47 +26,99 @@
 
       function draw(){
         //alert('draw called');
-        var p = puzzle(dimension);
+        var p = new Puzzle(dimension);
         console.log(p);
       }
 
-      function puzzle(dimension){
-        var puzzle = {};
-        puzzle.dimension = dimension;
-        puzzle.positions = new Array(puzzle.dimension);
+      function Puzzle(dimension){
+        this.dimension = dimension;
+        this.positions = new Array(this.dimension);
 
-        for(var i=0; i< puzzle.dimension; i++){
-          puzzle.positions[i] = new Array(i+1);
-          for(var j=0; j<puzzle.positions[i].length ; j++){
-            puzzle.positions[i][j] =  new position(j,i,true)
+        for(var i=0; i< this.dimension; i++){
+          this.positions[i] = new Array(i+1);
+          for(var j=0; j<this.positions[i].length ; j++){
+            position = new Position(j,i,true,this);
+            this.positions[i][j] =  position;
+            position.canJump(directions.NW) ;
           }
 
         };
 
-        console.log(puzzle.positions);
-        return puzzle;
+        console.log(this.positions);
       }
 
-      function position(x,y,filled){
-        var position = {};
-        position.x = x;
-        position.y = y;
-        position.filled = true;
-
-        return position;
+      function Position(x,y,filled,puzzle){
+        this.puzzle = puzzle;
+        this.x = x;
+        this.y = y;
+        this.filled = true;
       }
 
+      Position.prototype.canJump = function(direction){
 
-      position.prototype.canJump =  function(direction){
+        // return false if we are trying to jump outside
+        // the bounds of the puzzle
+        var jumpUnits =  this.getRelativeJumpUnit(direction);
+        if(!this.isInbounds(direction,2)){
+          console.log("can't jump outside of the bounds of the puzzle");
+          return false;
+        }
+
+        // the landing position needs to be empty
+        xNew = this.x + 2*jumpUnits.x;
+        yNew = this.y + 2*jumpUnits.y;
+        var landingPosition = this.puzzle.positions[yNew][xNew];
+        if(landingPosition.filled){
+          console.log("can't jump to a position that is filled");
+          return false;
+        }
+
+        //the position we jumped over needs to be filled
+        xNew = this.x + jumpUnits.x;
+        yNew = this.y + jumpUnits.y;
+        landingPosition = this.puzzle.positions[yNew][xNew];
+        if(!landingPosition.filled){
+          console.log("can't jump over an unfilled position");
+          return false;
+        }
+
+        console.log('jump is possible! yay!');
+        return true;
+
+      }
+
+      Position.prototype.getRelativeJumpUnit=  function(direction){
         switch (direction) {
+          case directions.NE:
+            return {'x':0,'y':-1};
+          case directions.E:
+            return {'x':1,'y':0};
+          case directions.SE:
+            return {'x':1,'y':1};
+          case directions.SW:
+            return {'x':0,'y':1};
+          case directions.W:
+            return {'x':-1,'y':0};
           case directions.NW:
-            break;
+            return {'x':-1,'y':-1};
           default:
-
+            return null;
         }
       }
 
-      //createPosition.prototype.
+      Position.prototype.isInbounds = function(direction, units){
+        var u = this.getRelativeJumpUnit(direction);
+        var x = this.x + u.x * units;
+        var y = this.y + u.y * units;
+
+        if(x<0 || y<0 || x>y){
+          return false;
+        }
+        else{
+          return true;
+        }
+
+      }
 
     </script>
   </body>
