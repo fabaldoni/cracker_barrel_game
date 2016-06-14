@@ -1,172 +1,234 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
     <title></title>
     <style media="screen">
-      canvas {
-        border: 1px solid black;
-      }
+        canvas {
+            border: 1px solid black;
+        }
     </style>
-  </head>
-  <body onload="draw()">
-    <canvas id="canvas" width="0" height="0"></canvas>
+</head>
+
+<body onload="draw()">
+    <canvas id="canvas" width="0" height="0" onclick="view.hitTest(event)"></canvas>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
     <script type="text/javascript">
+        //constants
+        const directions = {
+            'NE': 1,
+            'E': 2,
+            'SE': 3,
+            'SW': 4,
+            'W': 5,
+            'NW': 6
+        }
+        const dimension = 4;
+        const unit = 60;
+        var p;
+        var view;
 
-      //constants
-      const directions = {'NE':1,'E':2,'SE':3,'SW':4,'W':5,'NW':6}
-      const dimension = 4;
-      const unit = 60;
-
-      var canvas = $('#canvas')[0];
-      //$('#canvas').attr('width',2*unit*maxPegsInRow).attr('height',2*unit*maxPegsInRow);
-      var context = canvas.getContext('2d');
+        //var canvas = $('#canvas')[0];
+        //$('#canvas').attr('width',2*unit*maxPegsInRow).attr('height',2*unit*maxPegsInRow);
+        //var context = canvas.getContext('2d');
 
 
-      function draw(){
-        //alert('draw called');
-        var p = new Puzzle(dimension);
+        function draw() {
+            //alert('draw called');
+            p = new Puzzle(dimension);
+            view = new View(400, 'canvas', 40, p);
 
-        var view =  new View(400,canvas,{X:10,Y:10},p);
+            //p.positions[0][0].toggle();
+            //p.positions[2][0].jump(directions.NE);
+        }
 
-        //p.positions[0][0].toggle();
-        //p.positions[2][0].jump(directions.NE);
-      }
+        function Puzzle(dimension) {
+            this.dimension = dimension;
+            this.positions = new Array(this.dimension);
 
-      function Puzzle(dimension){
-        this.dimension = dimension;
-        this.positions = new Array(this.dimension);
+            for (var i = 0; i < this.dimension; i++) {
+                this.positions[i] = new Array(i + 1);
+                for (var j = 0; j < this.positions[i].length; j++) {
+                    position = new Position(j, i, true, this);
+                    this.positions[i][j] = position;
+                }
 
-        for(var i=0; i< this.dimension; i++){
-          this.positions[i] = new Array(i+1);
-          for(var j=0; j<this.positions[i].length ; j++){
-            position = new Position(j,i,true,this);
-            this.positions[i][j] =  position;
+            };
+
+            console.log(this.positions);
+        }
+
+        function Position(x, y, filled, puzzle) {
+            this.puzzle = puzzle;
+            this.x = x;
+            this.y = y;
+            this.filled = true;
+        }
+
+        Position.prototype.toggle = function() {
+            this.filled = !this.filled;
+        }
+
+        Position.prototype.jump = function(direction) {
+
+            if (!this.canJump(direction)) return;
+
+            units = this.getRelativeJumpUnit(direction);
+
+            this.toggle();
+            this.puzzle.positions[this.y + units.y][this.x + units.x].toggle();
+            this.puzzle.positions[this.y + 2 * units.y][this.x + 2 * units.x].toggle();
+
+        }
+
+        Position.prototype.canJump = function(direction) {
+
+            // return false if we are trying to jump outside
+            // the bounds of the puzzle
+            var jumpUnits = this.getRelativeJumpUnit(direction);
+            if (!this.isInbounds(direction, 2)) {
+                console.log("can't jump outside of the bounds of the puzzle");
+                return false;
+            }
+
+            // the landing position needs to be empty
+            xNew = this.x + 2 * jumpUnits.x;
+            yNew = this.y + 2 * jumpUnits.y;
+            var landingPosition = this.puzzle.positions[yNew][xNew];
+            if (landingPosition.filled) {
+                console.log("can't jump to a position that is filled");
+                return false;
+            }
+
+            //the position we jumped over needs to be filled
+            xNew = this.x + jumpUnits.x;
+            yNew = this.y + jumpUnits.y;
+            landingPosition = this.puzzle.positions[yNew][xNew];
+            if (!landingPosition.filled) {
+                console.log("can't jump over an unfilled position");
+                return false;
+            }
+
+            console.log('jump is possible! yay!');
+            return true;
+
+        }
+
+        Position.prototype.getRelativeJumpUnit = function(direction) {
+            switch (direction) {
+                case directions.NE:
+                    return {
+                        'x': 0,
+                        'y': -1
+                    };
+                case directions.E:
+                    return {
+                        'x': 1,
+                        'y': 0
+                    };
+                case directions.SE:
+                    return {
+                        'x': 1,
+                        'y': 1
+                    };
+                case directions.SW:
+                    return {
+                        'x': 0,
+                        'y': 1
+                    };
+                case directions.W:
+                    return {
+                        'x': -1,
+                        'y': 0
+                    };
+                case directions.NW:
+                    return {
+                        'x': -1,
+                        'y': -1
+                    };
+                default:
+                    return null;
+            }
+        }
+
+        Position.prototype.isInbounds = function(direction, units) {
+            var u = this.getRelativeJumpUnit(direction);
+            var x = this.x + u.x * units;
+            var y = this.y + u.y * units;
+
+            if (x < 0 || y < 0 || x > y) {
+                return false;
+            } else {
+                return true;
+            }
+
+        }
+
+        function View(size, canvasHostId, margin, puzzle) {
+            this.spotRadius = 20;
+            this.size = size;
+            this.canvasHostId = canvasHostId;
+            this.margin = margin;
+            this.puzzle = puzzle;
+            this.space = Math.round(this.size / (this.puzzle.dimension - 1));
+            this.spotMap = [];
+
+
+            var canvas = $(this.canvasHostId)[0];
+            $('#canvas').attr('width', this.size + 2*this.margin).attr('height', this.size + 2*this.margin);
+            var ctx = canvas.getContext('2d');
+
+            var point = {x:0,y:0};
+            var positionsInLevel = this.puzzle.dimension;
+            var offset = 0;
+            var spotId = 0;
+
+            for(var i = 0; i < this.puzzle.dimension; i++) {
+              for(var j = 0; j < positionsInLevel; j++){
+
+                var y = Math.round(this.size + this.margin - i*this.space);
+                var x = Math.round(this.margin + offset + j*this.space);
+                var spot = {};
+
+                spot.id = spotId;
+                spot.x = x;
+                spot.y = y;
+                this.spotMap.push(spot);
+                spotId++;
+
+                ctx.beginPath();
+                ctx.arc(x,y, this.spotRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+              }
+              positionsInLevel--;
+              offset += this.space/2;
+
+            }
+
+        }
+
+        View.prototype.hitTest = function(e){
+          if(e.target !== canvas) return null;
+
+          var x = e.clientX;
+          var y = e.clientY;
+
+          console.log(e.target);
+
+          for (var i = 0; i < this.spotMap.length; i++) {
+            var spot = this.spotMap[i];
+            var distance = Math.sqrt(Math.pow(spot.x - x, 2) + Math.pow(spot.y - y, 2));
+
+            if(distance < this.spotRadius){
+              alert(this.spotMap[i].id);
+              return this.spotMap[i].id;
+            }
+
           }
-
-        };
-
-        console.log(this.positions);
-      }
-
-      function Position(x,y,filled,puzzle){
-        this.puzzle = puzzle;
-        this.x = x;
-        this.y = y;
-        this.filled = true;
-      }
-
-      Position.prototype.toggle = function(){
-        this.filled = !this.filled;
-      }
-
-      Position.prototype.jump = function(direction){
-
-        if(!this.canJump(direction)) return;
-
-        units = this.getRelativeJumpUnit(direction);
-
-        this.toggle();
-        this.puzzle.positions[this.y+units.y][this.x+units.x].toggle();
-        this.puzzle.positions[this.y+2*units.y][this.x+2*units.x].toggle();
-
-      }
-
-      Position.prototype.canJump = function(direction){
-
-        // return false if we are trying to jump outside
-        // the bounds of the puzzle
-        var jumpUnits =  this.getRelativeJumpUnit(direction);
-        if(!this.isInbounds(direction,2)){
-          console.log("can't jump outside of the bounds of the puzzle");
-          return false;
         }
-
-        // the landing position needs to be empty
-        xNew = this.x + 2*jumpUnits.x;
-        yNew = this.y + 2*jumpUnits.y;
-        var landingPosition = this.puzzle.positions[yNew][xNew];
-        if(landingPosition.filled){
-          console.log("can't jump to a position that is filled");
-          return false;
-        }
-
-        //the position we jumped over needs to be filled
-        xNew = this.x + jumpUnits.x;
-        yNew = this.y + jumpUnits.y;
-        landingPosition = this.puzzle.positions[yNew][xNew];
-        if(!landingPosition.filled){
-          console.log("can't jump over an unfilled position");
-          return false;
-        }
-
-        console.log('jump is possible! yay!');
-        return true;
-
-      }
-
-      Position.prototype.getRelativeJumpUnit=  function(direction){
-        switch (direction) {
-          case directions.NE:
-            return {'x':0,'y':-1};
-          case directions.E:
-            return {'x':1,'y':0};
-          case directions.SE:
-            return {'x':1,'y':1};
-          case directions.SW:
-            return {'x':0,'y':1};
-          case directions.W:
-            return {'x':-1,'y':0};
-          case directions.NW:
-            return {'x':-1,'y':-1};
-          default:
-            return null;
-        }
-      }
-
-      Position.prototype.isInbounds = function(direction, units){
-        var u = this.getRelativeJumpUnit(direction);
-        var x = this.x + u.x * units;
-        var y = this.y + u.y * units;
-
-        if(x<0 || y<0 || x>y){
-          return false;
-        }
-        else{
-          return true;
-        }
-
-      }
-
-      function View(size, canvas, offset, puzzle){
-        this.size = size;
-        this.canvas = canvas;
-        this.offset = offset;
-        this.puzzle = puzzle;
-        this.space = Math.round(size/(this.puzzle.dimension-1));
-
-
-        var grid =  new Array(this.puzzle.dimension);
-
-        for(var i=0; i<this.puzzle.dimension; i++){
-
-          grid[i] =  new Array(this.puzzle.dimension);
-          for (var j = 0; j < this.puzzle.dimension; j++) {
-            var x = i*this.space + offset.x;
-            var y = j*this.space + offset.y;
-            grid[i][j] = {'x':x,'y':y};
-          }
-
-          console.log(grid);
-
-        }
-
-
-
-
-      }
 
     </script>
-  </body>
+</body>
+
 </html>
