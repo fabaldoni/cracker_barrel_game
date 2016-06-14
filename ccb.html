@@ -27,10 +27,11 @@
       function draw(){
         //alert('draw called');
         var p = new Puzzle(dimension);
-        console.log(p);
 
-        p.positions[0][0].toggle();
-        p.positions[2][0].jump(directions.NE);
+        var view =  new View(400,canvas,{X:10,Y:10},p);
+
+        //p.positions[0][0].toggle();
+        //p.positions[2][0].jump(directions.NE);
       }
 
       function Puzzle(dimension){
@@ -135,6 +136,34 @@
         else{
           return true;
         }
+
+      }
+
+      function View(size, canvas, offset, puzzle){
+        this.size = size;
+        this.canvas = canvas;
+        this.offset = offset;
+        this.puzzle = puzzle;
+        this.space = Math.round(size/(this.puzzle.dimension-1));
+
+
+        var grid =  new Array(this.puzzle.dimension);
+
+        for(var i=0; i<this.puzzle.dimension; i++){
+
+          grid[i] =  new Array(this.puzzle.dimension);
+          for (var j = 0; j < this.puzzle.dimension; j++) {
+            var x = i*this.space + offset.x;
+            var y = j*this.space + offset.y;
+            grid[i][j] = {'x':x,'y':y};
+          }
+
+          console.log(grid);
+
+        }
+
+
+
 
       }
 
