@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title></title>
@@ -11,11 +10,13 @@
     </style>
 </head>
 
-<body onload="draw()">
+<body onload="draw()"> <!-- TODO: remove inline onload and on click handlers and do in script -->
     <canvas id="canvas" width="0" height="0" onclick="view.hitTest(event)"></canvas>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
     <script type="text/javascript">
-        //constants
+
+
+        //enumeration constants
         const directions = {
             'NE': 1,
             'E': 2,
@@ -24,6 +25,9 @@
             'W': 5,
             'NW': 6
         }
+        const spotState={'selected':0,'empty':1,'filled':2,'readyForJump':3};
+
+        //constants
         const dimension = 4;
         const unit = 60;
         var p;
@@ -173,16 +177,25 @@
             this.puzzle = puzzle;
             this.space = Math.round(this.size / (this.puzzle.dimension - 1));
             this.spotMap = [];
+            this.selectedSpot;
+            this.context;
 
 
             var canvas = $(this.canvasHostId)[0];
             $('#canvas').attr('width', this.size + 2*this.margin).attr('height', this.size + 2*this.margin);
             var ctx = canvas.getContext('2d');
+            this.context = ctx;
 
-            var point = {x:0,y:0};
+            //get offset of canvas from top left of browser
+            var rect = canvas.getBoundingClientRect();
+            this.offsetx = rect.left;
+            this.offsety = rect.top;
+
+            var point = {x:0,y:0}; // TODO: make point a class
             var positionsInLevel = this.puzzle.dimension;
             var offset = 0;
             var spotId = 0;
+            var spotParams = this.getSpotParams(spotState.filled);
 
             for(var i = 0; i < this.puzzle.dimension; i++) {
               for(var j = 0; j < positionsInLevel; j++){
@@ -208,26 +221,100 @@
 
         }
 
+        View.prototype.drawSpot = function(spot){
+
+          var ctx = this.context;
+          var state = this.getSpotParams(this.selectedSpot?spotState.selected:spotState.filled)
+
+          if(!!this.selectedSpot){
+            ctx.beginPath();
+            ctx.arc(this.selectedSpot.x,this.selectedSpot.y, this.spotRadius, 0, 2 * Math.PI);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle="black";
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.arc(spot.x,spot.y, this.spotRadius, 0, 2 * Math.PI);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle="red";
+          ctx.stroke();
+          // TODO: encapsulate the changing of stroke styles somewhere
+
+          this.selectedSpot = spot;
+        }
+
+        View.prototype.changeSpotState = function(spot, state){
+
+          var ctx =  this.context;
+          var params =  this.getSpotParams(spot, state)
+
+          ctx.beginPath();
+          ctx.arc(spot.x, spot.y, this.spotRadius, 0, 2 * Math.PI);
+          ctx.lineWidth = params.lineWeight;
+          ctx.strokeStyle=params.strokeColor;
+          ctx.stroke();
+
+          if(params.filled){
+            ctx.beginPath();
+            ctx.arc(spot.x, spot.y, 0.8*this.spotRadius, 0, 2 * Math.PI);
+            ctx.lineWidth = params.lineWeight;
+            ctx.strokeStyle=params.strokeColor;
+            ctx.stroke();
+          }
+
+        }
+
+        View.prototype.getSpotParams = new function(state){
+          var params = {};
+
+          params.lineWeight = 3;
+
+          switch(state){
+            case spotState.selected:
+              params.strokeColor = 'blue';
+              params.filled = false;
+              break;
+            case spotState.empty:
+              params.strokeColor = 'lightgrey';
+              params.filled = false;
+              break;
+            case spotState.filled:
+              params.strokeColor = 'black';
+              params.filled = true;
+              break;
+            case spotState.readyForJump:
+              params.strokeColor = 'yellow';
+              params.filled = true;
+              break;
+            default:
+              break;
+          }
+
+          return params;
+        }
+
         View.prototype.hitTest = function(e){
           if(e.target !== canvas) return null;
 
-          var x = e.clientX;
-          var y = e.clientY;
-
-          console.log(e.target);
+          var ctx = this.context
+          var x = e.clientX - this.offsetx;
+          var y = e.clientY - this.offsety;
 
           for (var i = 0; i < this.spotMap.length; i++) {
             var spot = this.spotMap[i];
             var distance = Math.sqrt(Math.pow(spot.x - x, 2) + Math.pow(spot.y - y, 2));
 
             if(distance < this.spotRadius){
-              alert(this.spotMap[i].id);
+              this.selectSpot(this.spotMap[i]);
               return this.spotMap[i].id;
             }
 
           }
-        }
 
+        }
+// TODO: break this file up into amd modules
+// TODO: convert this to use ember
     </script>
 </body>
 
