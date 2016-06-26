@@ -20,7 +20,7 @@ namespace CBG {
         private offsetx: number;
         private offsety: number;
         private selectedIndex: number;
-        private openSpotSelected:boolean = false;
+        private openSpotSelected: boolean = false;
 
 
 
@@ -40,7 +40,9 @@ namespace CBG {
             this.canvas.setAttribute('height', this.size + 2 * this.margin);
             this.context = this.canvas.getContext('2d');
 
-            this.canvas.addEventListener('click', this, false);
+            //this.canvas.addEventListener('click', this, false);
+            this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this), false);
+            this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this), false);
 
             //get offset of canvas from top left of browser
             let rect = this.canvas.getBoundingClientRect();
@@ -80,6 +82,35 @@ namespace CBG {
 
         } //end of constructor
 
+
+
+
+        public startPoint:Point;
+        public currentPoint:Point;
+        public dropPoint:Point;
+        public isDDInProgress:boolean;
+        public intervalID:number;
+
+
+        private handleMouseDown(e) {
+            console.log("mouse down handler called");
+            this.isDDInProgress = true;
+            this.startPoint =  new Point(e.clientX, e.clientY)
+            this.intervalID = setInterval(this.update,100)
+        }
+
+        private handleMouseUp(e) {
+            this.isDDInProgress = false;
+            clearInterval(this.intervalID);
+            this.startPoint = null;
+        }
+
+        private update(e){
+          console.log("update called");
+        }
+
+
+
         // set up the click and double click handlers
         private clickCount: number = 0;
         private timerId: number;
@@ -90,11 +121,12 @@ namespace CBG {
 
             if (!mapEntry || !mapEntry.value) return;
 
-            if(!this.openSpotSelected){
-              mapEntry.value = false;
-              this.erasePiece(this.spotMap[idx]);
-              this.openSpotSelected = true;
-              return;
+            if (!this.openSpotSelected) {
+                mapEntry.value = false;
+                this.selectedIndex = null;
+                this.erasePiece(this.spotMap[idx]);
+                this.openSpotSelected = true;
+                return;
             }
 
             if (this.selectedIndex) this.drawUnselectedPiece(this.spotMap[this.selectedIndex]);
@@ -132,7 +164,7 @@ namespace CBG {
                 that.timerId = setTimeout(function(thatEvent) {
                     that.clickCount = 0;
                     that.singleClick(e);
-                }, 200);
+                }, 300);
             } else if (that.clickCount === 2) {
                 console.log(that.timerId);
                 clearTimeout(that.timerId);
@@ -199,7 +231,7 @@ namespace CBG {
         private erasePiece(spot: Spot) {
             this.context.globalCompositeOperation = 'destination-out';
             this.context.beginPath();
-            this.context.arc(spot.x, spot.y, RADIUS_FACTOR*this.spotRadius*1.1, 0, RADIANS_IN_360_DEGREES, true);
+            this.context.arc(spot.x, spot.y, RADIUS_FACTOR * this.spotRadius * 1.1, 0, RADIANS_IN_360_DEGREES, true);
             this.context.fill();
             this.context.globalCompositeOperation = 'source-over';
         }

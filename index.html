@@ -12,24 +12,21 @@
     <title>The Pegboard Puzzle</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <style>
+        html {
+            height: 100%;
+        }
 
-      html{
-        height:100%;
-      }
-
-      body {
-          padding-top: 70px;
-          min-height : 100%;
-          display: flex;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          justify-content: center;
-          min-height: 100%;
-          /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
-      }
-
-
+        body {
+            padding-top: 70px;
+            min-height: 100%;
+            display: flex;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            min-height: 100%;
+            /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+        }
     </style>
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -60,13 +57,16 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="#">About</a>
+                        <a id="startLink" href="#">Reset</a>
                     </li>
                     <li>
-                        <a href="#">Services</a>
+                        <a href="#">Settings</a>
                     </li>
                     <li>
-                        <a href="#">Contact</a>
+                        <a href="#" data-toggle="modal" data-target="#rulesModal">Game Rules</a>
+                    </li>
+                    <li>
+                        <a href="#" data-toggle="modal" data-target="#aboutModal">About</a>
                     </li>
                 </ul>
             </div>
@@ -76,11 +76,11 @@
     </nav>
 
     <!-- Page Content -->
-    <div class="container" >
+    <div class="container">
 
         <div class="row">
-            <div class="col-lg-12 text-center" >
-                <canvas id="canvas" width="0" height="0" ></canvas>
+            <div class="col-lg-12 text-center">
+                <canvas id="canvas" width="0" height="0"></canvas>
             </div>
         </div>
         <!-- /.row -->
@@ -88,14 +88,84 @@
     </div>
     <!-- /.container -->
 
+
+    <!-- Modal -->
+    <div class="modal fade" id="rulesModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Pegboard Game Rules</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        To start the game, click the start link in the toolbar. You can reset the game at any time by pressing reset.
+                    </p>
+                    <p>
+                        Once you start the game, the first click you make on a puzzle piece will define where the initial open space will be located. You have to start with one empty position because if not you will not be able to make your first jump
+                    </p>
+
+
+                    <p>
+                        Once you start the game subsequent clicks will select a piece. You can tell the piece is selected because it will turn blue. Once you have a piece selected you can initiate a jump.
+                    </p>
+
+                    <p>
+                        A double click will initiate a jump. When you try to jump, a few conditions must be met.In order to jump three conditions must be met.First, you need to have a piece selected. Second, you must be jumping over a pieced and not an empty position. Third,
+                        The position you jump to must be open. Just think of Chinese. Once the jump is conpleted. The piece you jumped over is eliminated from the board.
+                    </p>
+
+                    <p>
+                        The game is over once you can take no more jumps. The best you can do is to finish with only one piece on the puzzle board.
+                    </p>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">About</h4>
+                </div>
+                <div class="modal-body">
+                  <p>
+                    Lovingly crafted by Flavio Baldoni
+                  </p>
+                  <p>
+                    ©2016
+                  </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script type="text/javascript" src="game.js"></script>
     <script type="text/javascript">
-      $( document ).ready(function() {
-        let puzzle =  new CBG.Puzzle(5);
-        let view =  new CBG.View(400,'canvas',40, puzzle);
-      });
+
+        let puzzle=null;
+        let view=null;
+
+        function reset(){
+          puzzle = new CBG.Puzzle(5);
+          view = new CBG.View(400, 'canvas', 40, puzzle);
+        }
+
+        $(document).ready(function() {
+            reset();
+            $("#startLink").on('click',reset);
+        });
     </script>
 
 </body>

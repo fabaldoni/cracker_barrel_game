@@ -110,7 +110,8 @@ var CBG;
             this.canvas.setAttribute('width', this.size + 2 * this.margin);
             this.canvas.setAttribute('height', this.size + 2 * this.margin);
             this.context = this.canvas.getContext('2d');
-            this.canvas.addEventListener('click', this, false);
+            this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this), false);
+            this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this), false);
             var rect = this.canvas.getBoundingClientRect();
             this.offsetx = rect.left;
             this.offsety = rect.top;
@@ -139,6 +140,20 @@ var CBG;
                 offset += this.space / 2;
             }
         }
+        View.prototype.handleMouseDown = function (e) {
+            console.log("mouse down handler called");
+            this.isDDInProgress = true;
+            this.startPoint = new Point(e.clientX, e.clientY);
+            this.intervalID = setInterval(this.update, 100);
+        };
+        View.prototype.handleMouseUp = function (e) {
+            this.isDDInProgress = false;
+            clearInterval(this.intervalID);
+            this.startPoint = null;
+        };
+        View.prototype.update = function (e) {
+            console.log("update called");
+        };
         View.prototype.singleClick = function (e) {
             var idx = this.getIndexOfClickedSpot(e, ClickType.single);
             var mapEntry = this.puzzle.getMapEntry(idx);
@@ -146,6 +161,7 @@ var CBG;
                 return;
             if (!this.openSpotSelected) {
                 mapEntry.value = false;
+                this.selectedIndex = null;
                 this.erasePiece(this.spotMap[idx]);
                 this.openSpotSelected = true;
                 return;
@@ -178,7 +194,7 @@ var CBG;
                 that.timerId = setTimeout(function (thatEvent) {
                     that.clickCount = 0;
                     that.singleClick(e);
-                }, 200);
+                }, 300);
             }
             else if (that.clickCount === 2) {
                 console.log(that.timerId);
